@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Matching Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #eef;
+      margin: 0;
+      padding: 20px;
+    }
+    #game {
+      display: grid;
+      grid-template-columns: repeat(6, 100px);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .card {
+      width: 100px;
+      height: 100px;
+      position: relative;
+      perspective: 600px;
+    }
+    .inner {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      transform-style: preserve-3d;
+      transition: transform 0.5s;
+      cursor: pointer;
+    }
+    .flipped .inner {
+      transform: rotateY(180deg);
+      cursor: default;
+    }
+    .front, .back {
+      backface-visibility: hidden;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+    }
+    .front {
+      background: #00f;
+    }
+    .back {
+      transform: rotateY(180deg);
+      background-size: cover;
+      background-position: center;
+      border: 2px solid #444;
+    }
+    #controls {
+      margin-bottom: 10px;
+    }
+    #win {
+      font-size: 1.2em;
+      color: green;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Matching Game</h1>
+<div id="controls">
+  <button id="restart">🔄 Restart</button>
+  <span id="moves">Moves: 0</span>
+</div>
+<div id="game"></div>
+<div id="win">🎉 You Win! 🎉</div>
+
+<script>
+  const imageNames = [
+    'IMG_1289','IMG_1290','IMG_1291','IMG_1292',
+    'IMG_1293','IMG_1294','IMG_1295','IMG_1297',
+    'IMG_1298','IMG_1299','IMG_1300','IMG_1301'
+  ];
+  const baseUrl = 'https://raw.githubusercontent.com/rbarney3/Josephgame/main/';
+  let moves = 0;
+  let matches = 0;
+  let firstCard = null;
+  let lock = false;
+
+  const gameEl = document.getElementById('game');
+  const movesEl = document.getElementById('moves');
+  const winEl = document.getElementById('win');
+  const restartBtn = document.getElementById('restart');
+
+  restartBtn.addEventListener('click', initGame);
+
+  function initGame() {
+    moves = 0;
+    matches = 0;
+    firstCard = null;
+    lock = false;
+    movesEl.textContent = 'Moves: 0';
+    winEl.style.display = 'none';
+    gameEl.innerHTML = '';
+
+    const cards = [];
+    imageNames.forEach(name => {
+      const url = baseUrl + name + '.png';
+      cards.push({url, id: name});
+      cards.push({url, id: name});
+    });
+    cards.sort(() => Math.random() - 0.5);
+
+    cards.forEach(cardData => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.id = cardData.id;
+
+      const inner = document.createElement('div');
+      inner.className = 'inner';
+
+      const front = document.createElement('div');
+      front.className = 'front';
+
+      const back = document.createElement('div');
+      back.className = 'back';
+      back.style.backgroundImage = `url(${cardData.url})`;
+
+      inner.appendChild(front);
+      inner.appendChild(back);
+      card.appendChild(inner);
+
+      card.addEventListener('click', () => flipCard(card));
+      gameEl.appendChild(card);
+    });
+  }
+
+  function flipCard(card) {
+    if (lock || card.classList.contains('flipped')) return;
+
+    card.classList.add('flipped');
+
+    if (!firstCard) {
+      firstCard = card;
+    } else {
+      moves++;
+      movesEl.textContent = 'Moves: ' + moves;
+      if (card.dataset.id === firstCard.dataset.id) {
+        matches++;
+        firstCard = null;
+        if (matches === imageNames.length) {
+          winEl.style.display = 'block';
+        }
+      } else {
+        lock = true;
+        setTimeout(() => {
+          card.classList.remove('flipped');
+          firstCard.classList.remove('flipped');
+          firstCard = null;
+          lock = false;
+        }, 1000);
+      }
+    }
+  }
+
+  initGame();
+</script>
+
+</body>
+</html>
